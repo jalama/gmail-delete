@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Generate Icons for Gmail Bulk Deleter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      background: #d93025;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #c5221f;
+    }
+    .preview {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    canvas {
+      margin: 10px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Generate Icons for Gmail Bulk Deleter</h1>
+  <p>Click the buttons below to download all three required icon files:</p>
+
+  <div>
+    <button onclick="downloadAllIcons()">Download All Icons</button>
+  </div>
+
+  <div class="preview">
+    <h3>Preview:</h3>
+    <canvas id="preview16"></canvas>
+    <canvas id="preview48"></canvas>
+    <canvas id="preview128"></canvas>
+  </div>
+
+  <script>
+    function createIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Background with rounded corners
+      ctx.fillStyle = '#d93025';
+      const radius = size * 0.15;
+
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw trash can icon
+      const scale = size / 16;
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = Math.max(1, scale * 0.8);
+
+      // Top bar of trash can
+      ctx.fillRect(5 * scale, 3 * scale, 6 * scale, scale);
+
+      // Can body outline
+      ctx.strokeRect(4 * scale, 4 * scale, 8 * scale, 9 * scale);
+
+      // Vertical lines inside trash can
+      ctx.beginPath();
+      ctx.moveTo(6 * scale, 6 * scale);
+      ctx.lineTo(6 * scale, 11 * scale);
+      ctx.moveTo(8 * scale, 6 * scale);
+      ctx.lineTo(8 * scale, 11 * scale);
+      ctx.moveTo(10 * scale, 6 * scale);
+      ctx.lineTo(10 * scale, 11 * scale);
+      ctx.stroke();
+
+      return canvas;
+    }
+
+    function downloadCanvas(canvas, filename) {
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function downloadAllIcons() {
+      const sizes = [16, 48, 128];
+      sizes.forEach((size, index) => {
+        setTimeout(() => {
+          const canvas = createIcon(size);
+          downloadCanvas(canvas, `icon${size}.png`);
+        }, index * 500); // Stagger downloads to avoid browser blocking
+      });
+    }
+
+    // Create previews
+    window.onload = function() {
+      [16, 48, 128].forEach(size => {
+        const canvas = createIcon(size);
+        const preview = document.getElementById(`preview${size}`);
+        const ctx = preview.getContext('2d');
+        preview.width = size;
+        preview.height = size;
+        ctx.drawImage(canvas, 0, 0);
+      });
+    };
+  </script>
+</body>
+</html>
