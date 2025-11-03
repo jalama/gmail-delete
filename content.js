@@ -285,10 +285,16 @@ async function handleDeleteEmails(config) {
       await sleep(500);
     }
 
+    // Build trash search query by replacing category with in:trash
+    let trashQuery = searchQuery.replace(/category:\S+/g, '').trim();
+    trashQuery = `in:trash ${trashQuery}`.trim();
+
     return {
       success: true,
       deleted: totalDeleted,
-      pages: currentPage
+      pages: currentPage,
+      searchQuery: searchQuery,
+      trashQuery: trashQuery
     };
 
   } catch (error) {

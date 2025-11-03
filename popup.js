@@ -59,7 +59,9 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
     });
 
     if (response && response.success) {
-      showStatus(`Success! Processed ${response.deleted} emails across ${response.pages} pages`, 'success');
+      const message = `Success! Deleted ${response.deleted} emails across ${response.pages} pages.`;
+      const trashUrl = `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(response.trashQuery)}`;
+      showStatus(message, 'success', trashUrl);
     } else if (response) {
       showStatus(`Error: ${response.error}`, 'error');
     } else {
@@ -77,15 +79,36 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
   }
 });
 
-function showStatus(message, type) {
+function showStatus(message, type, trashUrl = null) {
   const status = document.getElementById('status');
-  status.textContent = message;
+  status.innerHTML = ''; // Clear previous content
   status.className = type;
   status.style.display = 'block';
+
+  // Add message text
+  const messageText = document.createTextNode(message);
+  status.appendChild(messageText);
+
+  // Add trash link if provided
+  if (trashUrl && type === 'success') {
+    const lineBreak = document.createElement('br');
+    status.appendChild(lineBreak);
+
+    const link = document.createElement('a');
+    link.href = trashUrl;
+    link.textContent = 'View deleted emails in Trash';
+    link.target = '_blank';
+    link.style.color = '#155724';
+    link.style.textDecoration = 'underline';
+    link.style.fontWeight = 'bold';
+    link.style.marginTop = '8px';
+    link.style.display = 'inline-block';
+    status.appendChild(link);
+  }
 
   if (type === 'success') {
     setTimeout(() => {
       status.style.display = 'none';
-    }, 5000);
+    }, 15000); // Extended to 15 seconds so user has time to click link
   }
 }
