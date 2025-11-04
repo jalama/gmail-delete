@@ -46,10 +46,18 @@ async function handleDeleteEmails(config) {
     let totalDeleted = 0;
     let currentPage = 0;
     let hasMorePages = true;
+    let consecutiveFailures = 0;
 
     while (hasMorePages && (maxPages === 0 || currentPage < maxPages)) {
       currentPage++;
       console.log(`Processing page ${currentPage}...`);
+
+      // Safety check: if we've had too many consecutive failures, stop
+      if (consecutiveFailures >= 3) {
+        console.error('⚠ Stopped after 3 consecutive failures. Gmail may need time to recover.');
+        console.log(`Successfully deleted ${totalDeleted} emails before stopping.`);
+        break;
+      }
 
       // Count emails before selection
       const emailCountBefore = countEmails();
@@ -224,6 +232,7 @@ async function handleDeleteEmails(config) {
         console.log('✓ Delete successful - undo notification appeared');
         console.log('Undo message:', undoNotification.textContent);
         totalDeleted += selectedCount;
+        consecutiveFailures = 0; // Reset failure counter on success
       } else {
         console.log('No undo notification detected, checking if emails were removed...');
 
@@ -237,8 +246,10 @@ async function handleDeleteEmails(config) {
         if (stillSelected === 0) {
           console.log('✓ Emails appear to be deleted (no longer selected)');
           totalDeleted += selectedCount;
+          consecutiveFailures = 0; // Reset failure counter
         } else {
           console.warn('⚠ Delete may have failed - trying keyboard shortcut #');
+          consecutiveFailures++;
 
           // Try keyboard shortcut as backup
           const hashEvent = new KeyboardEvent('keypress', {
@@ -256,10 +267,10 @@ async function handleDeleteEmails(config) {
           if (undoCheck && undoCheck.textContent.toLowerCase().includes('conversation')) {
             console.log('✓ Keyboard shortcut worked');
             totalDeleted += selectedCount;
+            consecutiveFailures = 0; // Reset on success
           } else {
-            console.error('✗ Failed to delete emails on this iteration');
-            // Don't throw error, just log and continue to next page
-            console.log('Continuing to next page...');
+            console.error(`✗ Failed to delete emails on this iteration (failure ${consecutiveFailures}/3)`);
+            console.log('Will retry on next iteration...');
           }
         }
       }
@@ -279,10 +290,12 @@ async function handleDeleteEmails(config) {
       } else {
         console.log(`Found ${newEmailCount} more emails, continuing...`);
         hasMorePages = true;
-      }
 
-      // Small delay before next iteration
-      await sleep(500);
+        // Give Gmail extra time to stabilize before next selection
+        // This prevents race conditions with Gmail's UI updates
+        console.log('Waiting for Gmail UI to stabilize...');
+        await sleep(2000);
+      }
     }
 
     // Build trash search query by replacing category with in:trash
